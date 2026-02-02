@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Clara - Assistente Pessoal</title>
+    <title>Clara - Secretária Pessoal</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @keyframes bounce {
@@ -58,10 +58,12 @@
             const [inputValue, setInputValue] = useState('');
             const [isTyping, setIsTyping] = useState(false);
             const [userMemory, setUserMemory] = useState({
+                name: '',
                 appointments: [],
                 medications: [],
                 contacts: [],
-                notes: []
+                notes: [],
+                preferences: {}
             });
             const [userId, setUserId] = useState('');
             const messagesEndRef = useRef(null);
@@ -84,7 +86,7 @@
                     setMessages(JSON.parse(savedMessages));
                 } else {
                     setTimeout(() => {
-                        addClaraMessage("Bom dia. Meu nome é Clara e sou sua assistente pessoal.\n\nEstou aqui para ajudá-lo a organizar sua rotina, gerenciar compromissos, guardar informações importantes e facilitar seu dia a dia.\n\nPode contar comigo para lembretes, agendamentos, contatos e o que mais precisar.\n\nComo posso ajudá-lo hoje?");
+                        addClaraMessage("Olá, meu nome é Clara. Eu sou sua nova secretária pessoal.\n\nEstou aqui para te ajudar com:\n• Organizar sua agenda e compromissos\n• Guardar contatos e informações importantes\n• Lembretes de medicamentos e consultas\n• Sugestões de atividades e entretenimento\n\nPara começarmos, como você prefere que eu te chame?");
                     }, 1000);
                 }
             }, []);
@@ -135,30 +137,42 @@
             const getClaraResponse = async (userMessage) => {
                 setIsTyping(true);
 
-                const systemPrompt = `Você é Clara, uma assistente pessoal brasileira especializada em ajudar pessoas aposentadas (cerca de 70 anos) que foram executivos bem-sucedidos e estão acostumados a ter suporte secretarial.
+                const systemPrompt = `Você é Clara, uma secretária pessoal brasileira especializada em ajudar pessoas aposentadas (cerca de 70 anos) que foram executivos bem-sucedidos e estão acostumados a ter suporte secretarial.
 
-SEU TOM E ESTILO - CRÍTICO:
+SEU TOM E ESTILO:
 - Use português FORMAL e respeitoso - apropriado para senhores e senhoras de 70 anos
 - SEM gírias, SEM informalidades excessivas, SEM emojis
 - Tom PROFISSIONAL que passa confiança e competência
 - Converse como uma pessoa REAL e educada, não como um chatbot
-- Respostas CURTAS - 2-3 frases no máximo, a menos que seja absolutamente necessário
-- PERGUNTE antes de sugerir - entenda o que a pessoa quer primeiro
-- UMA coisa por vez - não despeje múltiplas sugestões ou listas
-- Atenciosa e positiva, mas NUNCA bajuladora ou excessivamente elogiosa
-- Use "você" ou "senhor/senhora" quando apropriado
+- Respostas CURTAS - 2-3 frases no máximo
 - NUNCA pareça robótica ou artificial
 
-COMO INTERAGIR:
-1. Se pedirem sugestões (filmes, séries, exercícios): PRIMEIRO pergunte sobre preferências/gostos
-2. Confirme informações importantes de forma natural
-3. Seja conversacional mas respeitosa - como uma assistente executiva competente
-4. EVITE listas com bullets (•) - fale naturalmente
-5. Não termine toda mensagem com "Posso ajudar com algo mais?" - varie ou omita
+ONBOARDING (primeiras interações):
+Se esta é uma das primeiras conversas (memória vazia ou poucas informações):
+1. PRIMEIRO pergunte o nome da pessoa
+2. Depois pergunte como ela prefere que você a ajude (rotina, saúde, entretenimento)
+3. Vá conhecendo aos poucos - UMA pergunta por vez
+4. Seja curiosa mas respeitosa
+5. Use o nome da pessoa quando souber
+
+DEPOIS DO ONBOARDING:
+- PERGUNTE antes de sugerir - entenda preferências primeiro
+- UMA coisa por vez - não despeje múltiplas sugestões
+- Atenciosa e positiva, mas NUNCA bajuladora
+- EVITE listas com bullets (•) em conversas - fale naturalmente
+- Varie as interações - nem sempre pergunte "posso ajudar com algo mais?"
 
 Memória atual: ${JSON.stringify(userMemory)}
 
-Seja natural, educada, respeitosa e conversacional. Você é uma assistente executiva atenciosa, não um robô.`;
+EXEMPLOS:
+
+❌ ERRADO: "Entendido! Aqui estão suas opções: • Opção 1 • Opção 2"
+✅ CERTO: "Entendi, Sr. João. Você prefere que eu comece ajudando com sua agenda ou com os contatos?"
+
+❌ ERRADO: "Que legal! Você vai adorar! Vou te mostrar tudo!"
+✅ CERTO: "Perfeito. Para organizar melhor, você costuma ter muitos compromissos na semana?"
+
+Seja natural, educada, respeitosa e genuinamente interessada em conhecer e ajudar a pessoa.`;
 
                 try {
                     const response = await fetch('/api/chat', {
@@ -190,6 +204,14 @@ Seja natural, educada, respeitosa e conversacional. Você é uma assistente exec
 
             const updateMemory = (userMsg) => {
                 const lowerMsg = userMsg.toLowerCase();
+                
+                // Detectar nome (primeira interação)
+                if (!userMemory.name && messages.length <= 3) {
+                    // Assumir que a primeira mensagem após saudação pode ser o nome
+                    const newMemory = { ...userMemory };
+                    newMemory.name = userMsg.trim();
+                    setUserMemory(newMemory);
+                }
                 
                 if (lowerMsg.includes('consulta') || lowerMsg.includes('médico') || lowerMsg.includes('dentista')) {
                     const newMemory = { ...userMemory };
@@ -232,10 +254,10 @@ Seja natural, educada, respeitosa e conversacional. Você é uma assistente exec
             };
 
             const quickActions = [
-                "Qual é minha agenda hoje?",
-                "Preciso marcar uma consulta",
-                "Sugere um filme para assistir?",
-                "Me lembre de fazer exercícios"
+                "Tenho consulta médica essa semana",
+                "Preciso guardar um telefone importante",
+                "Como você pode me ajudar?",
+                "Quero organizar minha agenda"
             ];
 
             return (
@@ -247,7 +269,7 @@ Seja natural, educada, respeitosa e conversacional. Você é uma assistente exec
                             </div>
                             <div>
                                 <h1 className="font-semibold">Clara</h1>
-                                <p className="text-xs text-emerald-100">Sua Assistente Pessoal</p>
+                                <p className="text-xs text-emerald-100">Sua Secretária Pessoal</p>
                             </div>
                         </div>
                         <div className="flex gap-4">
@@ -288,22 +310,7 @@ Seja natural, educada, respeitosa e conversacional. Você é uma assistente exec
                         <div ref={messagesEndRef} />
                     </div>
 
-                    {messages.length <= 2 && (
-                        <div className="px-4 py-2 bg-white border-t border-gray-200">
-                            <p className="text-xs text-gray-500 mb-2">Sugestões:</p>
-                            <div className="flex flex-wrap gap-2">
-                                {quickActions.map((action, idx) => (
-                                    <button
-                                        key={idx}
-                                        onClick={() => setInputValue(action)}
-                                        className="text-xs bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full hover:bg-emerald-100 transition-colors"
-                                    >
-                                        {action}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                    )}
+                    {/* Quick Actions removed - Clara will start conversation naturally */}
 
                     <div className="bg-white border-t border-gray-200 p-3 flex gap-2">
                         <input

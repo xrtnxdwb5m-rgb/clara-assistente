@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clara - Secretária Pessoal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+        .animate-bounce {
+            animation: bounce 1s infinite;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-emerald-50 to-teal-100 min-h-screen flex items-center justify-center p-4">
+    <div id="root"></div>
+
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        const Send = () => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="22" y1="2" x2="11" y2="13"></line>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+            </svg>
+        );
+
+        const Phone = () => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+            </svg>
+        );
+
+        const Video = () => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polygon points="23 7 16 12 23 17 23 7"></polygon>
+                <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+            </svg>
+        );
+
+        const MoreVertical = () => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="1"></circle>
+                <circle cx="12" cy="5" r="1"></circle>
+                <circle cx="12" cy="19" r="1"></circle>
+            </svg>
+        );
+
+        const ClaraApp = () => {
+            const [messages, setMessages] = useState([]);
+            const [inputValue, setInputValue] = useState('');
+            const [isTyping, setIsTyping] = useState(false);
+            const [userMemory, setUserMemory] = useState({
+                name: '',
+                appointments: [],
+                medications: [],
+                contacts: [],
+                notes: [],
+                preferences: {}
+            });
+            const [userId, setUserId] = useState('');
+            const messagesEndRef = useRef(null);
+
+            useEffect(() => {
+                let id = localStorage.getItem('clara_user_id');
+                if (!id) {
+                    id = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                    localStorage.setItem('clara_user_id', id);
+                }
+                setUserId(id);
+
+                const savedMemory = localStorage.getItem(`clara_memory_${id}`);
+                if (savedMemory) {
+                    setUserMemory(JSON.parse(savedMemory));
+                }
+
+                const savedMessages = localStorage.getItem(`clara_messages_${id}`);
+                if (savedMessages) {
+                    setMessages(JSON.parse(savedMessages));
+                } else {
+                    setTimeout(() => {
+                        addClaraMessage("Olá, meu nome é Clara. Eu sou sua nova secretária pessoal.\n\nEstou aqui para te ajudar com:\n• Organizar sua agenda e compromissos\n• Guardar contatos e informações importantes\n• Lembretes de medicamentos e consultas\n• Sugestões de atividades e entretenimento\n\nPara começar, você pode me contar um pouco sobre sua rotina ou me perguntar algo.");
+                    }, 1000);
+                }
+            }, []);
+
+            useEffect(() => {
+                if (userId) {
+                    localStorage.setItem(`clara_memory_${userId}`, JSON.stringify(userMemory));
+                }
+            }, [userMemory, userId]);
+
+            useEffect(() => {
+                if (userId && messages.length > 0) {
+                    localStorage.setItem(`clara_messages_${userId}`, JSON.stringify(messages));
+                }
+            }, [messages, userId]);
+
+            const scrollToBottom = () => {
+                messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+            };
+
+            useEffect(() => {
+                scrollToBottom();
+            }, [messages]);
+
+            const addClaraMessage = (text) => {
+                const typingDelay = Math.min(Math.max(text.length * 30, 800), 3000);
+                
+                setTimeout(() => {
+                    setMessages(prev => [...prev, {
+                        id: Date.now(),
+                        text,
+                        sender: 'clara',
+                        timestamp: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+                    }]);
+                    setIsTyping(false);
+                }, typingDelay);
+            };
+
+            const addUserMessage = (text) => {
+                setMessages(prev => [...prev, {
+                    id: Date.now(),
+                    text,
+                    sender: 'user',
+                    timestamp: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+                }]);
+            };
+
+            const getClaraResponse = async (userMessage) => {
+                setIsTyping(true);
+
+                const systemPrompt = `Você é Clara, uma secretária pessoal brasileira para aposentados (70 anos) que foram executivos.
+
+TOM:
+- Português formal mas natural
+- SEM repetir "bom dia/boa tarde" toda hora
+- Use "senhor" ou "senhora" SEM o nome depois
+- Respostas MUITO curtas: 1-2 frases máximo
+- Zero prolixidade - seja direta
+- SEM emojis
+
+FOCO: 3 COISAS PEQUENAS
+Ajude APENAS com:
+1. Agenda e lembretes (consultas, medicamentos)
+2. Organizar informações (contatos, telefones)
+3. Sugestões pontuais (filmes, exercícios)
+
+OBJETIVO: Melhorar qualidade de vida e produtividade
+
+COMO TRABALHAR:
+- Resolveu algo? Encerre. Diga "Estou à disposição" e pronto.
+- NÃO prolongue conversas desnecessariamente
+- Dê sugestões práticas de como usar a secretária
+- Se não souber, seja honesta: "Não tenho essa informação"
+- EVITE perguntas em cadeia - resolva o que foi pedido
+
+Memória: ${JSON.stringify(userMemory)}
+
+EXEMPLOS:
+
+❌ ERRADO (prolixo): "Que maravilhosa, Sr. João! Fico muito feliz em poder ajudá-lo com isso! Vou anotar tudo certinho para o senhor e vou garantir que não esqueça. Posso ajudar com mais alguma coisa hoje?"
+
+✅ CERTO (direto): "Anotado. Vou lembrá-lo no dia."
+
+❌ ERRADO: "Bom dia novamente! Como está o senhor hoje? Espero que muito bem!"
+
+✅ CERTO: "Pois não?"
+
+Seja útil, discreta e eficiente. Secretária resolve e não enrola.`;
+
+                try {
+                    const response = await fetch('/api/chat', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            message: userMessage,
+                            systemPrompt: systemPrompt
+                        })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`Erro: ${response.status}`);
+                    }
+
+                    const data = await response.json();
+                    const claraResponse = data.content[0].text;
+
+                    updateMemory(userMessage, claraResponse);
+                    addClaraMessage(claraResponse);
+                } catch (error) {
+                    console.error("Erro:", error);
+                    setIsTyping(false);
+                    addClaraMessage("Desculpe, tive um problema técnico. Pode repetir, por favor?");
+                }
+            };
+
+            const updateMemory = (userMsg) => {
+                const lowerMsg = userMsg.toLowerCase();
+                
+                // Detectar nome (primeira interação)
+                if (!userMemory.name && messages.length <= 3) {
+                    // Assumir que a primeira mensagem após saudação pode ser o nome
+                    const newMemory = { ...userMemory };
+                    newMemory.name = userMsg.trim();
+                    setUserMemory(newMemory);
+                }
+                
+                if (lowerMsg.includes('consulta') || lowerMsg.includes('médico') || lowerMsg.includes('dentista')) {
+                    const newMemory = { ...userMemory };
+                    if (!newMemory.appointments.some(apt => apt.includes(userMsg.substring(0, 30)))) {
+                        newMemory.appointments.push(userMsg);
+                        setUserMemory(newMemory);
+                    }
+                }
+                
+                if (lowerMsg.includes('remédio') || lowerMsg.includes('medicamento')) {
+                    const newMemory = { ...userMemory };
+                    if (!newMemory.medications.some(med => med.includes(userMsg.substring(0, 30)))) {
+                        newMemory.medications.push(userMsg);
+                        setUserMemory(newMemory);
+                    }
+                }
+                
+                if (lowerMsg.includes('telefone') || lowerMsg.includes('contato')) {
+                    const newMemory = { ...userMemory };
+                    if (!newMemory.contacts.some(contact => contact.includes(userMsg.substring(0, 30)))) {
+                        newMemory.contacts.push(userMsg);
+                        setUserMemory(newMemory);
+                    }
+                }
+            };
+
+            const handleSend = () => {
+                if (inputValue.trim()) {
+                    addUserMessage(inputValue);
+                    getClaraResponse(inputValue);
+                    setInputValue('');
+                }
+            };
+
+            const handleKeyPress = (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSend();
+                }
+            };
+
+            const quickActions = [
+                "Tenho consulta médica essa semana",
+                "Preciso guardar um telefone importante",
+                "Como você pode me ajudar?",
+                "Quero organizar minha agenda"
+            ];
+
+            return (
+                <div className="w-full max-w-md bg-white rounded-lg shadow-2xl overflow-hidden flex flex-col" style={{ height: '600px' }}>
+                    <div className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white p-4 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-emerald-600 font-bold text-lg">
+                                C
+                            </div>
+                            <div>
+                                <h1 className="font-semibold">Clara</h1>
+                                <p className="text-xs text-emerald-100">Sua Secretária Pessoal</p>
+                            </div>
+                        </div>
+                        <div className="flex gap-4">
+                            <Phone />
+                            <Video />
+                            <MoreVertical />
+                        </div>
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto p-4 bg-gray-50">
+                        {messages.map((msg) => (
+                            <div key={msg.id} className={`mb-3 flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                                    msg.sender === 'user' 
+                                        ? 'bg-emerald-500 text-white rounded-br-none' 
+                                        : 'bg-white text-gray-800 rounded-bl-none shadow'
+                                }`}>
+                                    <p className="text-sm whitespace-pre-line">{msg.text}</p>
+                                    <p className={`text-xs mt-1 ${msg.sender === 'user' ? 'text-emerald-100' : 'text-gray-500'}`}>
+                                        {msg.timestamp}
+                                    </p>
+                                </div>
+                            </div>
+                        ))}
+                        
+                        {isTyping && (
+                            <div className="flex justify-start mb-3">
+                                <div className="bg-white px-4 py-3 rounded-lg rounded-bl-none shadow">
+                                    <div className="flex gap-1">
+                                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                        
+                        <div ref={messagesEndRef} />
+                    </div>
+
+                    {/* Quick Actions removed - Clara will start conversation naturally */}
+
+                    <div className="bg-white border-t border-gray-200 p-3 flex gap-2">
+                        <input
+                            type="text"
+                            value={inputValue}
+                            onChange={(e) => setInputValue(e.target.value)}
+                            onKeyPress={handleKeyPress}
+                            placeholder="Digite sua mensagem..."
+                            className="flex-1 px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                        />
+                        <button
+                            onClick={handleSend}
+                            disabled={!inputValue.trim()}
+                            className="bg-emerald-600 text-white p-2 rounded-full hover:bg-emerald-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                        >
+                            <Send />
+                        </button>
+                    </div>
+                </div>
+            );
+        };
+
+        ReactDOM.render(<ClaraApp />, document.getElementById('root'));
+    </script>
+</body>
+</html>
